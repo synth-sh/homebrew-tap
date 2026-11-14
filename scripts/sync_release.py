@@ -62,15 +62,16 @@ def update(package, tag, path, repo):
 
     version = tag[1:]
     if package == "synth":
-        targets = ("aarch64-macos", "x86_64-linux-musl")
+        targets = ("aarch64-macos", "aarch64-linux-musl", "x86_64-linux-musl")
         names = [f"synth-{version}-{target}.tar.gz" for target in targets]
-        checksums = iter(asset_checksums(repo, tag, names))
+        checksums = asset_checksums(repo, tag, names)
         updated = old.replace(current[0], f'  version "{version}"')
-        updated, count = re.subn(r'^    sha256 "[0-9a-f]{64}"$',
-                                 lambda _: f'    sha256 "{next(checksums)}"',
-                                 updated, flags=re.MULTILINE)
-        if count != len(targets):
-            raise ValueError(f"Expected {len(targets)} checksums in {path}")
+        for target, sha256 in zip(targets, checksums):
+            suffix = re.escape(f"-{target}.tar.gz")
+            pattern = rf'(^ +url "[^"\n]+{suffix}"\n +sha256 ")[0-9a-f]{{64}}("$)'
+            updated, count = re.subn(pattern, rf'\g<1>{sha256}\2', updated, flags=re.MULTILINE)
+            if count != 1:
+                raise ValueError(f"Expected one checksum for {target} in {path}")
     else:
         [sha256] = asset_checksums(repo, tag, [f"synth-desktop-{version}-macos-arm64.zip"])
         updated = f'''cask "synth-desktop" do
