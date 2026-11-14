@@ -1,0 +1,84 @@
+name: Sync stable releases
+
+on:
+  schedule:
+    - cron: '17,47 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    name: Sync ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: synth
+            path: Formula/synth.rb
+          - package: synth-desktop
+            path: Casks/synth-desktop.rb
+    concurrency:
+      group: homebrew-${{ matrix.package }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Verify published assets and generate package update
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PACKAGE: ${{ matrix.package }}
+          PACKAGE_PATH: ${{ matrix.path }}
+        run: |
+          set -euo pipefail
+          python3 scripts/sync_release.py "$PACKAGE"
+          if [ ! -f "$PACKAGE_PATH" ]; then
+            exit 0
+          fi
+          ruby -c "$PACKAGE_PATH"
+          git add -- "$PACKAGE_PATH"
+
+      - name: Open or refresh the package PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PACKAGE: ${{ matrix.package }}
+          PACKAGE_PATH: ${{ matrix.path }}
+          BASE: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+
+          branch="automation/update-$PACKAGE"
+          ref="refs/heads/$branch"
+          version=$(sed -n 's/^  version "\([^"]*\)"$/\1/p' "$PACKAGE_PATH")
+          title="chore(homebrew): update $PACKAGE to $version"
+          body="Update $PACKAGE to v$version. SHA-256 checksums were computed from the published release assets."
+          commit=$(git ls-remote origin "$ref" | cut -f1)
+
+          if [ -n "$commit" ]; then
+            git fetch --no-tags --depth=1 origin "$ref"
+          fi
+          if [ -z "$commit" ] || ! git diff --cached --quiet "$commit" -- "$PACKAGE_PATH"; then
+            git -c user.name='github-actions[bot]' \
+              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              commit -m "$title"
+            git push --force-with-lease="$ref:$commit" origin "HEAD:$ref"
+          fi
+
+          pr=$(gh pr list --base "$BASE" --head "$branch" --json number --jq '.[0].number // empty')
+          if [ -n "$pr" ]; then
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/pulls/$pr" \
+              -f title="$title" -f body="$body" --silent
+          else
+            gh pr create --base "$BASE" --head "$branch" --title "$title" --body "$body"
+          fi

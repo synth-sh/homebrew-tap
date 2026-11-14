@@ -1,0 +1,35 @@
+name: Notify Homebrew tap
+
+on:
+  workflow_call:
+    inputs:
+      client-id:
+        required: true
+        type: string
+    secrets:
+      private-key:
+        required: true
+
+permissions: {}
+
+jobs:
+  notify:
+    if: github.repository == 'synth-sh/synth' || github.repository == 'synth-sh/desktop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        id: app
+        with:
+          client-id: ${{ inputs.client-id }}
+          private-key: ${{ secrets.private-key }}
+          owner: synth-sh
+          repositories: homebrew-tap
+          permission-actions: write
+
+      - name: Run the tap sync workflow
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          gh api --method POST repos/synth-sh/homebrew-tap/actions/workflows/sync.yml/dispatches \
+            -f ref=main
