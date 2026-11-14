@@ -1,8 +1,6 @@
 name: Sync stable releases
 
 on:
-  schedule:
-    - cron: '17,47 * * * *'
   workflow_dispatch:
 
 permissions:
