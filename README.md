@@ -1,7 +1,7 @@
 # Synth Homebrew tap
 
 Install the [Synth CLI](https://github.com/synth-sh/synth) on Apple Silicon
-macOS or x86-64 Linux:
+macOS or on arm64 and x86-64 Linux:
 
 ```sh
 brew install synth-sh/tap/synth
