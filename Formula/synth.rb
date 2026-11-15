@@ -1,25 +1,25 @@
 class Synth < Formula
   desc "Terminal coding agent for local and hosted models"
   homepage "https://github.com/synth-sh/synth"
-  version "0.2.2"
+  version "0.2.3"
   license "MIT"
 
   on_macos do
     depends_on arch: :arm64
 
     url "https://github.com/synth-sh/synth/releases/download/v#{version}/synth-#{version}-aarch64-macos.tar.gz"
-    sha256 "096f69546bac1f6e452f85ea033ba2cf6ed77ac2880b7c092f3cd5a863afd119"
+    sha256 "b92d2f01a072e24491fbdbbbe66ccd5d1168be0e9eca8f43626e2adfcda5e59e"
   end
 
   on_linux do
     on_arm do
       url "https://github.com/synth-sh/synth/releases/download/v#{version}/synth-#{version}-aarch64-linux-musl.tar.gz"
-      sha256 "7d125a274ea3ed7119b5a337ea01a203cc285d2d5e1e26ddf3b8be61becc1ed7"
+      sha256 "c1b6ed0d45122166f7567407dcef32146edd62a655cb6e72004a8c2bde338860"
     end
 
     on_intel do
       url "https://github.com/synth-sh/synth/releases/download/v#{version}/synth-#{version}-x86_64-linux-musl.tar.gz"
-      sha256 "0ea005ff77ea1a135002b07561d863878e9437c3e6a8c9ade9739f30a512d733"
+      sha256 "6f13f999811bd0b598dd0b7d7de9faac9dc04dc1579ffa883329c2e2f8f120a3"
     end
   end
 
