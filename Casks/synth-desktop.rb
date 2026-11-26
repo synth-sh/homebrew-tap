@@ -1,6 +1,6 @@
 cask "synth-desktop" do
-  version "0.2.3"
-  sha256 "90226df1b3458840557bdf3a75e07bdea28d97e678e5128c09a33f32d5a6df73"
+  version "0.2.4"
+  sha256 "82afcdc32bd44616ad5bb8d41546c3826b48140b4c32988fe6e694556967bba6"
 
   url "https://github.com/synth-sh/desktop/releases/download/v#{version}/synth-desktop-#{version}-macos-arm64.zip"
   name "Synth"
